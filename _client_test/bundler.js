@@ -2,7 +2,7 @@ import asar from "@electron/asar";
 import path from "path";
 import fs from "fs";
 
-fs.cpSync("./client", "../build/client", { recursive: true });
+fs.cpSync("./client", "../build/resources", { recursive: true });
 
 // const config = JSON.parse(fs.readFileSync("./delfos.config.json"));
 //

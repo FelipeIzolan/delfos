@@ -1,8 +1,7 @@
 #include "webview.h"
-
 #include "server.cpp"
-#include "loader.cpp"
-#include <string>
+
+#include <iostream>
 
 
 #ifdef _WIN32
@@ -11,13 +10,13 @@ int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
 #else
 int main() {
 #endif  
-  std::thread st = server::Init();
-  webview::webview w(true, nullptr);
+  std::thread thread = server::Init();
+  webview::webview window(true, nullptr);
 
-  w.set_title("Bind Example");
-  w.set_size(480, 320, WEBVIEW_HINT_NONE);
-  w.navigate("http://localhost:" + std::to_string(server::port));
-  w.run();  
+  window.set_title("Bind Example");
+  window.set_size(480, 320, WEBVIEW_HINT_NONE);
+  window.navigate(server::address);
+  window.run();  
 
   return 0;
 }

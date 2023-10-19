@@ -2,14 +2,17 @@
 #include <thread>
 
 namespace server {
-  int port;
-
+  std::string address;
+  
   void Server() {
     httplib::Server server;
-    server.set_mount_point("/", "./client");
-    port = server.bind_to_any_port("0.0.0.0"); // localhost
+    int port = server.bind_to_any_port("0.0.0.0");
+    address = "http://localhost:" + std::to_string(port);
+
+    server.set_mount_point("/", "./resources");
     server.listen_after_bind();
   }
+
 
   std::thread Init() {
     std::thread s(Server);
