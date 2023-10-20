@@ -1,8 +1,8 @@
 #include "webview.h"
 #include "server.cpp"
-
-#include <iostream>
-
+#include "parser.cpp"
+#include "util.cpp"
+#include <string>
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
@@ -10,13 +10,19 @@ int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
 #else
 int main() {
 #endif  
-  std::thread thread = server::Init();
+  struct parser::Asar resources;
+  parser::Asar(&resources, "./app.asar");
+
+  std::thread thread = server::Init(&resources);
   webview::webview window(true, nullptr);
 
   window.set_title("Bind Example");
   window.set_size(480, 320, WEBVIEW_HINT_NONE);
   window.navigate(server::address);
-  window.run();  
+  window.run();
 
+  resources.stream.close();
+  
   return 0;
 }
+

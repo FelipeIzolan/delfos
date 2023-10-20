@@ -1,14 +1,15 @@
-#include <cstdint>
 #include <fstream>
 #include <iostream>
-
 #include "rapidjson/document.h"
 
+#ifndef _PARSERCPP_
+#define _PARSERCPP_
 
 namespace parser {   
   
   struct Asar {
     rapidjson::Document header;
+    std::ifstream stream;
     int offset;
   };
 
@@ -23,37 +24,42 @@ namespace parser {
   // ---------------------------------
   // Special thanks to Maks-s!
   // https://github.com/Maks-s/asar-cpp
-  Asar asarHeader(std::ifstream * file) { 
-    char *p = new char[8];
-    file->read(p, 8);
-    
-    uint32_t uSize = *(uint32_t*)(p + 4) - 8;
+  void Asar(struct Asar * asar, std::string p) {
+    asar->stream.open(p);
 
-    delete[] p;
-    
+    char *size = new char[8];
+    asar->stream.read(size, 8);
+
+    uint32_t uSize = *(uint32_t*)(size + 4) - 8;
+
+    delete[] size;
+
     char *buffer = new char[uSize + 1];
     buffer[uSize] = '\0';
-    
-    file->seekg(16);
-    file->read(buffer, uSize);
 
-    struct Asar a;
-    a.header = JSON(buffer);
-    a.offset = uSize + 16;
+    asar->stream.seekg(16);
+    asar->stream.read(buffer, uSize);
+
+    asar->header = JSON(buffer);
+    asar->offset = uSize + 16;
 
     delete[] buffer;
-    
-    return a;
   }
 
-  std::string asarContent(std::ifstream * file, int size, int offset, int h_offset) {
-    char * content = new char[size + 1];
-    content[size] = '\0';
-
-    file->seekg(offset + h_offset);
-    file->read(content, size);
+  std::string AsarContent(struct Asar * asar, std::string key) {
+    if (asar->header["files"].HasMember(key.c_str())) {
+    // char * content = new char[size + 1];
+    // content[size] = '\0';
+    //
+    // asar->stream.seekg(offset + asar->offset);
+    // asar->stream.read(content, size);
+    // 
+    // return content;
+    }
     
-    return content;
+    return nullptr; 
   }
 
 };
+
+#endif

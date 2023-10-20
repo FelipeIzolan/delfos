@@ -1,10 +1,9 @@
 import asar from "@electron/asar";
-import path from "path";
 import fs from "fs";
 
-fs.cpSync("./client", "../build/resources", { recursive: true });
-
-// const config = JSON.parse(fs.readFileSync("./delfos.config.json"));
+const config = JSON.parse(fs.readFileSync("./delfos.config.json"));
+fs.cpSync("./delfos.config.json", config.app + "/delfos.config.json");
+asar.createPackage(config.app, "../build/app.asar");
 //
 // var allFiles = [];
 // var staticFiles = [];
@@ -36,7 +35,6 @@ fs.cpSync("./client", "../build/resources", { recursive: true });
 //   return true;
 // });
 //
-// asar.createPackageFromFiles(config.app, "../build/app.asar", staticFiles);
 //
 // for (const d of directories) {
 //   let dir = d.replace("./client", "../build");
