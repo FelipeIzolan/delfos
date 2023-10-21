@@ -1,3 +1,6 @@
+#pragma once
+
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -5,19 +8,15 @@
 #include "./util.cpp"
 #include "json.hpp"
 
-#ifndef _PARSERCPP_
-#define _PARSERCPP_
-
 namespace parser {   
   
   struct Asar {
-    nlohmann::json header;
-    std::ifstream stream;
+    json::JSON header;
     int offset;
   };
 
-  nlohmann::json JSON(const char *json) {
-    return nlohmann::json::parse(json);
+  auto JSON(std::string j) {
+    return json::JSON::Load(j);
   }
 
   // asar_format: | UInt32: header_size | String: header | Bytes: file1 | ... | Bytes: file42 |
@@ -25,56 +24,58 @@ namespace parser {
   // ---------------------------------
   // Special thanks to Maks-s!
   // https://github.com/Maks-s/asar-cpp
-  void Asar(struct Asar * asar, std::string p) {
-    asar->stream.open(p, std::ios::binary);
+  void Asar(Asar * asar) {
+    std::ifstream stream("resources.asar");
 
     char *size = new char[8];
-    asar->stream.read(size, 8);
+    stream.read(size, 8);
 
     uint32_t uSize = *(uint32_t*)(size + 4) - 8;
-
-    delete[] size;
 
     char *buffer = new char[uSize + 1];
     buffer[uSize] = '\0';
 
-    asar->stream.seekg(16);
-    asar->stream.read(buffer, uSize);
+    stream.seekg(16);
+    stream.read(buffer, uSize);
 
     asar->header = JSON(buffer);
     asar->offset = uSize + 16;
 
+    delete[] size;
     delete[] buffer;
+    stream.close();
   }
 
-  std::string AsarContent(struct Asar * asar, std::string key) { 
+  std::string AsarContent(struct Asar * asar, std::string key) {
     std::vector<std::string> v = util::resolve_req_path(key);
-    auto k = asar->header["files"];
+    auto * k = &asar->header.at("files");
 
     for (auto i = v.begin(); i != v.end(); i++) {
       std::string t = *i;
 
-      if (util::is_file(t)) k = k[t.c_str()];
-      else k = k[t.c_str()]["files"];
+      if (util::is_file(t)) k = &k->at(t);
+      else { k = &k->at(t); k = &k->at("files"); }
     };
 
-    uint64_t size = k["size"];
-    uint64_t offset = std::stoull(std::string(k["offset"]));
-
+    uint64_t size = (uint64_t) k->at("size").ToInt();
+    uint64_t offset = std::stoull(k->at("offset").ToString());
+   
     // Probably it's the worst way to resolve this problem
     // Because it read the entire file starting from offset + asar->offset
     // And after read it just cut string using the size.
 
     // I think that if limit streamsize or stop stream after reach the limit_size
     // is better but I don't know how to do this.
-    
+
     // Well at least it's working XD
     std::stringstream content;
-    asar->stream.seekg(offset + asar->offset);
-    content << asar->stream.rdbuf();
+    std::ifstream stream("resources.asar");
 
-    return content.str().substr(0,size);
+    stream.seekg(offset + asar->offset);
+    content << stream.rdbuf();
+
+    stream.close();
+
+    return content.str().substr(0,size);  
   }
-};
-
-#endif
+}

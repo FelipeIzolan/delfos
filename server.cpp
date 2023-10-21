@@ -1,13 +1,14 @@
 #include "httplib.h"
-#include <iostream>
-#include <string>
 #include <thread>
+#include <string>
 
 #include "../util.cpp"
 #include "../parser.cpp"
+#include "mime.h"
 
 namespace server {
   std::string address;
+  Mime mime;
 
   void Server(struct parser::Asar * resources) {
     httplib::Server server;
@@ -20,10 +21,10 @@ namespace server {
         
         return httplib::Server::HandlerResponse::Handled;
       }
-
+      
       if (util::is_file(req.path) && req.method == "GET") {
         std::string content = parser::AsarContent(resources, req.path);
-        res.set_content(content, util::content_type(req.path));
+        res.set_content(content, mime[util::extname(req.path)]);
         
         return httplib::Server::HandlerResponse::Handled;
       }

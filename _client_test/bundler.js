@@ -3,7 +3,7 @@ import fs from "fs";
 
 const config = JSON.parse(fs.readFileSync("./delfos.config.json"));
 fs.cpSync("./delfos.config.json", config.app + "/delfos.config.json");
-asar.createPackage(config.app, "../build/app.asar");
+asar.createPackage(config.app, "../build/resources.asar");
 //
 // var allFiles = [];
 // var staticFiles = [];
