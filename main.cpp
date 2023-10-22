@@ -1,7 +1,10 @@
 #include <string>
 
-#include "server.cpp"
 #include "webview.h"
+
+#include "server.cpp"
+#include "parser.cpp"
+#include "json.hpp"
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
@@ -13,22 +16,19 @@ int main() {
   struct parser::Asar resources; 
   parser::Asar(&resources);
 
-  // nlohmann::json config = parser::JSON(parser::AsarContent(&resources, "/delfos.config.json")); 
+  json::JSON config = parser::JSON(parser::AsarContent(&resources, "/delfos.config.json")); 
   std::thread thread = server::Init(&resources);
-  // 
-  // std::string title = config["window"]["title"];
-  // int width = config["window"]["width"];
-  // int height = config["window"]["height"];
-  // bool devTools = config["window"]["devTools"];
+  
+  std::string title = config["window"]["title"].ToString();
+  int width = config["window"]["width"].ToInt();
+  int height = config["window"]["height"].ToInt();
+  bool devTools = config["window"]["devTools"].ToBool();
 
-  webview::webview window(true, nullptr);
-  window.set_title("Felkip");
-  window.set_size(1280, 720, WEBVIEW_HINT_NONE);
+  webview::webview window(devTools, nullptr);
+  window.set_title(title);
+  window.set_size(width, height, WEBVIEW_HINT_NONE);
   window.navigate(server::address);
   window.run();
-
-  // config.clear();
-
 
   return 0;
 }

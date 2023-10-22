@@ -4,6 +4,6 @@
     "title": "Pokemon Pokedex",
     "width": 1280,
     "height": 720,
-    "devTools": false
+    "devTools": true
   }
 }
