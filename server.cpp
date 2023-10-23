@@ -13,6 +13,12 @@ namespace server {
   void Server(struct parser::Asar * resources) {
     address = "http://localhost:" + std::to_string(9999);
     http::Server t;
+    
+    t.setup([](http::Request req, http::Response * res) {
+      res->body = "<h1>Hello, World!</h1>";
+      res->headers.insert({"Content-Type", "text/html"});
+    });
+    
     t.listen(9999);
   }
 

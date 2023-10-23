@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -18,7 +20,12 @@
 // *** 1 2 3
 
 namespace http {
-  
+  const std::string ResponseTemplate = "HTTP/1.1 200 OK\r\n"\
+                                       "Content-Type: text/html\r\n"\
+                                       "\r\n"\
+                                       "<!DOCTYPE html><html><body><h1>Hello, my friend!</h1></body></html>";
+                                       
+
   class Request {
     public:
       std::map<std::string, std::string> headers;
@@ -28,18 +35,18 @@ namespace http {
 
       Request(char * buffer) {
         std::stringstream p(buffer);
-        std::string line;
-        bool start = true;
 
-        while (std::getline(p, line)) {
-          if (start) {
+        for (int i = 0; i < 33; i++) { // max-header = 32
+          std::string line;
+          std::getline(p, line);
+
+          if (i == 0) {
             int s1 = line.find(" ");
             int s2 = line.find(" ", s1);
 
             method = line.substr(0, s1);
             path = line.substr(s2+1,s1-1);
 
-            start = false;
             continue;
           }
           
@@ -48,18 +55,30 @@ namespace http {
           
           std::string key = line.substr(0, sep);
           std::string value = line.substr(sep+2);
+
           headers.insert({key, value});
         }
 
         p >> body;
-        std::cout << "body: " << body << "\n";
-
       }
+  };
+
+  class Response {
+    public:
+      std::map<std::string, std::string> headers;
+      std::string body;
+      int code = 200;
   };
 
 
   class Server {
+    
+
     public:
+      void setup(void(*func)(Request, Response*)) {
+        handler = func;
+      }
+
       void listen(uint16_t port) {
         int ssocket;
         int soption;
@@ -76,9 +95,9 @@ namespace http {
         }
 
         if (setsockopt(ssocket, SOL_SOCKET, SO_REUSEADDR, &soption, sizeof(soption))) {
-        perror("http.h -> socket option failed.");
-        exit(1);
-    }
+          perror("http.h -> socket option failed.");
+          exit(1);
+        }
     
         if (bind(ssocket, (struct sockaddr *)&saddress, ssize) < 0) {
           perror("http.h -> bind failed.");
@@ -90,26 +109,35 @@ namespace http {
           exit(1);
         }
 
-        int csocket;      
-        struct sockaddr_in caddress;
-        socklen_t csize = sizeof(caddress);
+        while (1) {
+          int csocket;      
+          struct sockaddr_in caddress;
+          socklen_t csize = sizeof(caddress);
 
-        if ((csocket = accept(ssocket, (struct sockaddr *)&caddress, &csize)) < 0) {
-          perror("http.h -> accept failed.");
-          exit(1);
+          if ((csocket = accept(ssocket, (struct sockaddr *)&caddress, &csize)) < 0) {
+            perror("http.h -> accept failed.");
+            continue;
+          }
+
+          char * buffer = new char[BUFSIZ];
+          ssize_t buffer_size = read(csocket, buffer, BUFSIZ);
+        
+          // Request req(buffer); 
+          // Response res;
+          // handler(req, &res);
+       
+          send(csocket, ResponseTemplate.c_str(), ResponseTemplate.length(), 0);
+
+
+          close(csocket);
         }
 
-        char * buffer = new char[BUFSIZ];
-        ssize_t buffer_size;
-
-        buffer_size = read(csocket, buffer, BUFSIZ);
-        Request req(buffer); 
-
-        write(csocket, "a", 1);
-        close(csocket);
         close(ssocket);
-        delete[] buffer;
     }
+
+    protected:
+      std::function<void(Request, Response*)> handler;
+
   };
 
 
