@@ -12,11 +12,20 @@ namespace server {
 
   void Server(struct parser::Asar * resources) {
     address = "http://localhost:" + std::to_string(9999);
-    http::Server t;
+    HTTP::Server t;
     
-    t.setup([](http::Request req, http::Response * res) {
-      res->body = "<h1>Hello, World!</h1>";
-      res->headers.insert({"Content-Type", "text/html"});
+    t.setup([&](HTTP::Request req, HTTP::Response * res) {
+      
+      if (req.method == "GET" && req.path == "/") { 
+        res->body = parser::AsarContent(resources, "/index.html");
+        res->headers.insert({"Content-Type", "text/html"});
+      }
+
+      if (req.method == "GET" && util::is_file(req.path)) {
+        res->body = parser::AsarContent(resources, req.path);
+        res->headers.insert({"Content-Type", mime[util::extname(req.path)]});
+      }
+
     });
     
     t.listen(9999);

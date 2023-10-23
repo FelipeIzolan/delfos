@@ -22,7 +22,7 @@ namespace parser {
   // asar_format: | UInt32: header_size | String: header | Bytes: file1 | ... | Bytes: file42 |
   // https://github.com/electron/asar
   // ---------------------------------
-  // Special thanks to Maks-s!
+  // Thanks Maks-s!
   // https://github.com/Maks-s/asar-cpp
   void Asar(Asar * asar) {
     std::ifstream stream("resources.asar");

@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <map>
@@ -13,18 +14,88 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// *htons
-// ** convert host-byte-order to network-byte-order
-// ** int-bytes to big-endian order.
-// *** 3 1 2
-// *** 1 2 3
+namespace HTTP {
+  inline std::string statusMessage(int code) {
+	  switch (code) {
+	  case 100: return "Continue";
+	  case 101: return "Switching Protocols";
+	  case 102: return "Processing";
+	  case 103: return "Early Hints";
+	  case 200: return "OK";
+	  case 201: return "Created";
+	  case 202: return "Accepted";
+	  case 203: return "Non-Authoritative Information";
+	  case 204: return "No Content";
+	  case 205: return "Reset Content";
+	  case 206: return "Partial Content";
+	  case 207: return "Multi-Status";
+	  case 208: return "Already Reported";
+	  case 226: return "IM Used";
+	  case 300: return "Multiple Choices";
+	  case 301: return "Moved Permanently";
+	  case 302: return "Found";
+	  case 303: return "See Other";
+	  case 304: return "Not Modified";
+	  case 305: return "Use Proxy";
+	  case 307: return "Temporary Redirect";
+	  case 308: return "Permanent Redirect";
+	  case 400: return "Bad Request";
+	  case 401: return "Unauthorized";
+	  case 402: return "Payment Required";
+	  case 403: return "Forbidden";
+	  case 404: return "Not Found";
+	  case 405: return "Method Not Allowed";
+	  case 406: return "Not Acceptable";
+	  case 407: return "Proxy Authentication Required";
+	  case 408: return "Request Timeout";
+	  case 409: return "Conflict";
+	  case 410: return "Gone";
+	  case 411: return "Length Required";
+	  case 412: return "Precondition Failed";
+	  case 413: return "Content Too Large";
+	  case 414: return "URI Too Long";
+	  case 415: return "Unsupported Media Type";
+	  case 416: return "Range Not Satisfiable";
+	  case 417: return "Expectation Failed";
+	  case 418: return "I'm a teapot";
+	  case 421: return "Misdirected Request";
+	  case 422: return "Unprocessable Content";
+	  case 423: return "Locked";
+	  case 424: return "Failed Dependency";
+	  case 425: return "Too Early";
+	  case 426: return "Upgrade Required";
+	  case 428: return "Precondition Required";
+	  case 429: return "Too Many Requests";
+	  case 431: return "Request Header Fields Too Large";
+	  case 451: return "Unavailable For Legal Reasons";
+	  case 500: return "Internal Server Error";
+	  case 501: return "Not Implemented";
+	  case 502: return "Bad Gateway";
+	  case 503: return "Service Unavailable";
+	  case 504: return "Gateway Timeout";
+	  case 505: return "HTTP Version Not Supported";
+	  case 506: return "Variant Also Negotiates";
+	  case 507: return "Insufficient Storage";
+	  case 508: return "Loop Detected";
+	  case 510: return "Not Extended";
+	  case 511: return "Network Authentication Required";
+	  default: return std::string();
+	  }
+  }
 
-namespace http {
-  const std::string ResponseTemplate = "HTTP/1.1 200 OK\r\n"\
-                                       "Content-Type: text/html\r\n"\
-                                       "\r\n"\
-                                       "<!DOCTYPE html><html><body><h1>Hello, my friend!</h1></body></html>";
-                                       
+  inline std::string headers(std::map<std::string, std::string> h) {
+    std::string s = "";
+    
+    for (auto i = h.begin(); i != h.end(); i++) {
+      s += i->first + ": " + i->second + "\r\n";
+    }
+
+    return s;
+  }
+}
+
+
+namespace HTTP {
 
   class Request {
     public:
@@ -36,16 +107,16 @@ namespace http {
       Request(char * buffer) {
         std::stringstream p(buffer);
 
-        for (int i = 0; i < 33; i++) { // max-header = 32
+        for (int i = 0; i < 99; i++) { // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
           std::string line;
           std::getline(p, line);
 
           if (i == 0) {
             int s1 = line.find(" ");
-            int s2 = line.find(" ", s1);
+            int s2 = line.find("HTTP");
 
             method = line.substr(0, s1);
-            path = line.substr(s2+1,s1-1);
+            path = line.substr(s1+1,s2-5);
 
             continue;
           }
@@ -63,6 +134,7 @@ namespace http {
       }
   };
 
+  
   class Response {
     public:
       std::map<std::string, std::string> headers;
@@ -71,13 +143,9 @@ namespace http {
   };
 
 
-  class Server {
-    
-
+  class Server { 
     public:
-      void setup(void(*func)(Request, Response*)) {
-        handler = func;
-      }
+      void setup(std::function<void(Request, Response*)> func) { handler = func; }
 
       void listen(uint16_t port) {
         int ssocket;
@@ -85,7 +153,7 @@ namespace http {
         struct sockaddr_in saddress;
         socklen_t ssize = sizeof(saddress);
 
-        saddress.sin_port = htons(port);
+        saddress.sin_port = htons(port); // network-byte-order - big-endian
         saddress.sin_addr.s_addr = INADDR_ANY;
         saddress.sin_family = AF_INET;
 
@@ -119,17 +187,22 @@ namespace http {
             continue;
           }
 
-          char * buffer = new char[BUFSIZ];
-          ssize_t buffer_size = read(csocket, buffer, BUFSIZ);
-        
-          // Request req(buffer); 
-          // Response res;
-          // handler(req, &res);
+          char * cbuffer = new char[BUFSIZ];
+          ssize_t cbuffer_size = read(csocket, cbuffer, BUFSIZ);
        
-          send(csocket, ResponseTemplate.c_str(), ResponseTemplate.length(), 0);
+          char * sbuffer = new char[BUFSIZ];
 
+          Request req(cbuffer); 
+          Response res;
+
+          handler(req, &res); 
+          std::snprintf(sbuffer, BUFSIZ, ResponseTemplate.c_str(), res.code, statusMessage(res.code).c_str(), headers(res.headers).c_str(), res.body.c_str());
+          
+          send(csocket, sbuffer, strlen(sbuffer), 0);
 
           close(csocket);
+          delete[] cbuffer;
+          delete[] sbuffer;
         }
 
         close(ssocket);
@@ -137,9 +210,10 @@ namespace http {
 
     protected:
       std::function<void(Request, Response*)> handler;
-
+      std::string ResponseTemplate = "HTTP/1.1 %i %s\r\n" // http-line
+                                     "%s" // headers
+                                     "\r\n" // empty-line
+                                     "%s"; // body
   };
-
-
 
 }
