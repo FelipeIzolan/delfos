@@ -505,7 +505,7 @@ namespace HTTP {
         socklen_t ssize = sizeof(saddress);
 
         saddress.sin_port = htons(port); // network-byte-order - big-endian
-        saddress.sin_addr.s_addr = INADDR_ANY;
+        saddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // only local-client
         saddress.sin_family = AF_INET;
 
         if ((ssocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -542,7 +542,7 @@ namespace HTTP {
           char * sbuffer = new char[BUFSIZ];
           
           ssize_t cbuffer_size = read(csocket, cbuffer, BUFSIZ); 
-
+                    
           Request req(cbuffer); 
           Response res;
 

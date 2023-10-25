@@ -4,7 +4,7 @@
 #include <string>
 
 namespace util {
-  // it use path, checking if have a extname
+  // it use path to check if have a extname
   bool is_file(std::string p) {
     size_t i = p.find_last_of(".");
     return i != std::string::npos && i > 0;
@@ -26,8 +26,12 @@ namespace util {
       e = p.find('/');
     }
 
-    v.insert(v.end(), p.substr(0)); 
-    
+    std::string last = p.substr(0);
+    size_t query = last.find("?");
+
+    if (query != std::string::npos) v.insert(v.end(), p.substr(0, query));
+    else v.insert(v.end(), p.substr(0));
+
     return v; 
   } 
 }

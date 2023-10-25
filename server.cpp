@@ -19,8 +19,8 @@ namespace server {
         return;
       }
 
-
       std::vector<std::string> p = util::resolve_req_path(req.path);
+
       if (req.method == "GET" && util::is_file(req.path) && Asar::exist(resources, p)) {
         res->body = Asar::content(resources, p);
         res->headers.insert({"Content-Type", HTTP::mimeByExt(util::extname(req.path))});
