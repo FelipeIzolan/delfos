@@ -1,30 +1,26 @@
 #pragma once
 
-#include <cstdint>
+#include <json.hpp>
 #include <fstream>
-#include <sstream>
-#include <string>
+#include <vector>
 
-#include "./util.cpp"
-#include "json.hpp"
-
-namespace parser {   
-  
-  struct Asar {
+namespace Asar {
+  struct asar {
     json::JSON header;
     int offset;
   };
+ 
+  void parser(struct asar * s);
+  std::string content(struct asar * s, std::vector<std::string> path);
+  bool exist(struct asar * s, std::vector<std::string> path);
+}
 
-  auto JSON(std::string j) {
-    return json::JSON::Load(j);
-  }
-
-  // asar_format: | UInt32: header_size | String: header | Bytes: file1 | ... | Bytes: file42 |
+namespace Asar { 
   // https://github.com/electron/asar
   // ---------------------------------
   // Thanks Maks-s!
   // https://github.com/Maks-s/asar-cpp
-  void Asar(Asar * asar) {
+  void parser(struct asar * s) {
     std::ifstream stream("resources.asar");
 
     char *size = new char[8];
@@ -38,23 +34,23 @@ namespace parser {
     stream.seekg(16);
     stream.read(buffer, uSize);
 
-    asar->header = JSON(buffer);
-    asar->offset = uSize + 16;
+    s->header = json::JSON::Load(buffer);
+    s->offset = uSize + 16;
 
     delete[] size;
     delete[] buffer;
     stream.close();
   }
 
-  std::string AsarContent(struct Asar * asar, std::string key) {
-    std::vector<std::string> v = util::resolve_req_path(key);
-    auto * k = &asar->header.at("files");
+  std::string content(struct asar * s, std::vector<std::string> path) {
+    auto * k = &s->header.at("files");
 
-    for (auto i = v.begin(); i != v.end(); i++) {
+    for (auto i = path.begin(); i != path.end(); i++) {
       std::string t = *i;
+      size_t e = t.find_last_of(".");
 
-      if (util::is_file(t)) k = &k->at(t);
-      else { k = &k->at(t); k = &k->at("files"); }
+      if (e != std::string::npos && e < t.length()) k = &k->at(t); // is_file
+      else { k = &k->at(t); k = &k->at("files"); } // is_directory
     };
 
     uint64_t size = (uint64_t) k->at("size").ToInt();
@@ -71,11 +67,25 @@ namespace parser {
     std::stringstream content;
     std::ifstream stream("resources.asar");
 
-    stream.seekg(offset + asar->offset);
+    stream.seekg(offset + s->offset);
     content << stream.rdbuf();
 
     stream.close();
 
     return content.str().substr(0,size);  
+  }
+
+  bool exist(struct asar * s, std::vector<std::string> path) {
+    auto * k = &s->header.at("files");
+
+    for (auto i = path.begin(); i != path.end(); i++) {
+      std::string t = *i;
+      size_t e = t.find_last_of(".");
+
+      if (e != std::string::npos && e < t.length()) k = &k->at(t); // is_file
+      else { k = &k->at(t); k = &k->at("files"); } // is_directory
+    };
+
+    return !k->IsNull();
   }
 }
