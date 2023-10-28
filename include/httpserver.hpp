@@ -465,9 +465,9 @@ namespace HTTP {
 
         Request(char* buffer) {
             std::stringstream p(buffer);
+            std::string line;
 
             for (int i = 0; i < 99; i++) { // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
-                std::string line;
                 std::getline(p, line);
 
                 if (i == 0) {
@@ -489,7 +489,7 @@ namespace HTTP {
                 headers.insert({ key, value });
             }
 
-            p >> body;
+
         }
     };
 
@@ -572,45 +572,52 @@ namespace HTTP {
             #endif
   		
             struct sockaddr_in caddress;
+             
             #ifdef _WIN32
             int csize = sizeof(caddress);
-
-            if ((csocket = accept(ssocket, (struct sockaddr*)&caddress, &csize)) < 0) {
             #endif
             #ifdef linux
             socklen_t csize = sizeof(caddress);
+            #endif
 
             if ((csocket = accept(ssocket, (struct sockaddr*)&caddress, &csize)) < 0) {
-            #endif
               perror("http.h -> accept failed.");
               continue;
             }
 
-            char* cbuffer = new char[BUFSIZ];
-            char* sbuffer = new char[BUFSIZ];
+            char * cbuffer = new char[BUFSIZ];
+            char * sbuffer = new char[BUFSIZ];
+            
+            if (recv(csocket, cbuffer, BUFSIZ, 0) > 0) {
+              std::cout << cbuffer << "\n";
+              Request req(cbuffer);
+              Response res;
 
-            size_t cbuffer_size = recv(csocket, cbuffer, BUFSIZ, 0);
+              handler(req, &res);
+              std::snprintf(
+                  sbuffer,
+                  BUFSIZ,
+                  ResponseTemplate.c_str(),
+                  res.code,
+                  statusMessage(res.code).c_str(),
+                  headers(res.headers).c_str(),
+                  res.body.c_str()
+              );
 
-            Request req(cbuffer);
-            Response res;
-
-            handler(req, &res);
-            std::snprintf(sbuffer, BUFSIZ, ResponseTemplate.c_str(), res.code, statusMessage(res.code).c_str(), headers(res.headers).c_str(), res.body.c_str());
-
-            if (send(csocket, sbuffer, strlen(sbuffer), 0) < 0) {
-              perror("http.h -> send failed.");
-		        };
+              if (send(csocket, sbuffer, strlen(sbuffer), 0) < 0) 
+                perror("http.h -> send failed.");
+            }
                 
             #ifdef linux
+            shutdown(csocket, SHUT_RDWR);
             close(csocket);
             #endif
-
             #ifdef _WIN32
 		        shutdown(csocket, SD_SEND);
             closesocket(csocket);
             #endif
 
-            delete[] cbuffer;
+            memset(cbuffer, 0, BUFSIZ);
             delete[] sbuffer;
           }
 

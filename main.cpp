@@ -1,11 +1,28 @@
 #include <string>
+#include <json.hpp>
+#include <asar.hpp>
+#include <webview.h>
 
-#include "webview.h"
-
-#include "json.hpp"
-#include "asar.hpp"
-
+#include "sqlite.cpp"
 #include "server.cpp"
+
+webview::webview load(struct Asar::asar * resources, int * PORT) {
+  json::JSON config = json::JSON::Load(Asar::content(resources, "resources.asar", {"delfos.config.json"})); 
+  
+  int width = config["window"]["width"].ToInt();
+  int height = config["window"]["height"].ToInt();
+  bool devTools = config["window"]["devTools"].ToBool();
+  std::string title = config["window"]["title"].ToString();
+
+  *PORT = config["server"]["port"].ToInt();
+
+  webview::webview window(devTools, nullptr);
+  window.set_title(title);
+  window.set_size(width, height, WEBVIEW_HINT_NONE);
+  window.navigate("http://localhost:" + std::to_string(*PORT));
+ 
+  return window;
+}
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
@@ -13,23 +30,18 @@ int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
 #endif
 #ifndef _WIN32
 int main() {
-#endif  
+#endif
+  int * PORT = new int;
   struct Asar::asar resources; 
-  Asar::parser(&resources);
+  Asar::parser(&resources, "resources.asar");
 
-  json::JSON config = json::JSON::Load(Asar::content(&resources, {"delfos.config.json"})); 
-  std::thread thread = server::Init(&resources);
-  //
-  std::string title = config["window"]["title"].ToString();
-  int width = config["window"]["width"].ToInt();
-  int height = config["window"]["height"].ToInt();
-  bool devTools = config["window"]["devTools"].ToBool();
+  SQLite db(".database.sql");
+  webview::webview window = load(&resources, PORT);
+  std::thread server = server::Init(&resources, &db, *PORT);
 
-  webview::webview window(devTools, nullptr);
-  window.set_title(title);
-  window.set_size(width, height, WEBVIEW_HINT_NONE);
-  window.navigate("http://localhost:9999");
+  delete PORT;
   window.run();
+  db.close();
 
   return 0;
 }

@@ -20,8 +20,8 @@ namespace Asar {
   // ---------------------------------
   // Thanks Maks-s!
   // https://github.com/Maks-s/asar-cpp
-  void parser(struct asar * s) {
-    std::ifstream stream("resources.asar");
+  void parser(struct asar * s, std::string filename) {
+    std::ifstream stream(filename);
 
     char *size = new char[8];
     stream.read(size, 8);
@@ -42,7 +42,7 @@ namespace Asar {
     stream.close();
   }
 
-  std::string content(struct asar * s, std::vector<std::string> path) {
+  std::string content(struct asar * s, std::string filename, std::vector<std::string> path) {
     auto * k = &s->header.at("files");
 
     for (auto i = path.begin(); i != path.end(); i++) {
@@ -65,7 +65,7 @@ namespace Asar {
 
     // Well at least it's working XD
     std::stringstream content;
-    std::ifstream stream("resources.asar");
+    std::ifstream stream(filename);
 
     stream.seekg(offset + s->offset);
     content << stream.rdbuf();
