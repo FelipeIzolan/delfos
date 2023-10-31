@@ -5,6 +5,7 @@
 #include <json.hpp>
 
 int _sqlite3_exec_callback(void * data, int argc, char **row, char **column) {
+  std::cout << "Hi! from callback\n";
   json::JSON c;
   for (int i = 0; i < argc; i++) c[column[i]] = row[i];
   ((json::JSON*)data)->append(c);
@@ -17,10 +18,10 @@ class SQLite {
       sqlite3_open(filename.c_str(), &db);
     }
 
-    json::JSON exec(const std::string query) {
+    std::string exec(const std::string query) {
       auto r = json::JSON::Load("[]");
       sqlite3_exec(db, query.c_str(), &_sqlite3_exec_callback, &r, nullptr);
-      return r;
+      return r.stringify();
     }
 
     void close() {

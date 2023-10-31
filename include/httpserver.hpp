@@ -476,20 +476,22 @@ namespace HTTP {
 
                     method = line.substr(0, s1);
                     path = line.substr(s1 + 1, s2 - 5);
+                    path = path.substr(0, path.find(" "));
 
                     continue;
                 }
 
                 size_t sep = line.find(":");
-                if (sep == std::string::npos) break; // empty-line
+                if (sep == std::string::npos) { // empty-line
+                  while (std::getline(p, line)) body += line;
+                  break;
+                }
 
                 std::string key = line.substr(0, sep);
                 std::string value = line.substr(sep + 2);
 
                 headers.insert({ key, value });
             }
-
-
         }
     };
 
@@ -589,7 +591,6 @@ namespace HTTP {
             char * sbuffer = new char[BUFSIZ];
             
             if (recv(csocket, cbuffer, BUFSIZ, 0) > 0) {
-              std::cout << cbuffer << "\n";
               Request req(cbuffer);
               Response res;
 
@@ -622,6 +623,7 @@ namespace HTTP {
           }
 
           #ifdef linux
+          shutdown(ssocket, SHUT_RDWR);
           close(ssocket);
           #endif
 

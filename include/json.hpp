@@ -385,7 +385,9 @@ namespace json {
             bool skip = true;
             for( auto &p : *Internal.Map ) {
               if( !skip ) s += ",";
-              s += ( "\"" + p.first + "\":" + p.second.stringify() );
+              std::string value = p.second.stringify();
+              if (value == "\"undefined\"") continue;
+              s += ( "\"" + p.first + "\":" + value );
               skip = false;
             }
             s += ( "}" ) ;
@@ -396,7 +398,9 @@ namespace json {
             bool skip = true;
             for( auto &p : *Internal.List ) {
               if( !skip ) s += ",";
-              s += p.stringify();
+              std::string value = p.stringify();
+              if (value == "\"undefined\"") continue;
+              s += value;
               skip = false;
             }
             s += "]";
@@ -729,5 +733,6 @@ namespace json {
   inline JSON JSON::Load( const std::string &str ) {
     size_t offset = 0;
     return std::move( parse_next( str, offset ) );
+  
   }
 } // End Namespace json

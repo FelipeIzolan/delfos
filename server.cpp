@@ -2,14 +2,13 @@
 #include <string>
 #include <sqlite3.h>
 
+#include "../util.cpp"
 #include "httpserver.hpp"
 #include "asar.hpp"
 
-#include "../util.cpp"
-#include "../sqlite.cpp"
 
 namespace server {
-  void Server(struct Asar::asar * resources, SQLite * db, int port) {
+  void Server(struct Asar::asar * resources, int port) {
     HTTP::Server t;
 
     t.setup([&](HTTP::Request req, HTTP::Response * res) {     
@@ -29,28 +28,15 @@ namespace server {
         }
       }
 
-      // ------- DATABASE ------- //
-      if (req.method == "POST" && req.path == "/delfos/query") {
-        // std::cout << req.body << "\n";
-        // std::cout << (db->exec(req.body)).stringify() << "\n";
-        
-        // res->body = (db->exec(req.body)).stringify();
-        // res->headers.insert({"Content-Type", "application/json"});
-        std::cout << "Hi from database controller\n";
-        return;
-      }
-
-      res->code = 404;
-    
+      res->code = 404;    
     });
-
 
     t.listen(port);
   }
 
-
-  std::thread Init(struct Asar::asar * resources, SQLite * db, int port) {
-    std::thread s(Server, resources, db, port);
+  std::thread Init(struct Asar::asar * resources, int port) {
+    std::thread s(Server, resources, port);
     return s;
   }
+
 }

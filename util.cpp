@@ -17,7 +17,7 @@ namespace util {
   std::vector<std::string> resolve_req_path(std::string p) {
     std::vector<std::string> v;
 
-    p.erase(p.begin(), p.begin() + 1); // erase first "/"
+    p.erase(0, 1); // erase first "/"
     int e = p.find('/');
 
     while (e != std::string::npos) {
@@ -33,5 +33,5 @@ namespace util {
     else v.insert(v.end(), p.substr(0));
 
     return v; 
-  } 
+  }
 }
