@@ -3,12 +3,16 @@
 
 class Storage {
   public:
-    Storage() {
-      std::ifstream x(".storage");
+    Storage(const std::string _filename) {
+      filename = _filename;
+      
+      std::ifstream x(filename);
       std::stringstream y;
 
-      if (x.fail()) data["__init"] = 1337;
-      else { y << x.rdbuf(); data.Load(y.str()); }
+      if (!x.fail()) { 
+        y << x.rdbuf();
+        data.Load(y.str());
+      }
 
       x.close();
     }
@@ -26,11 +30,12 @@ class Storage {
     }
 
     void close() {
-      std::ofstream x(".storage");
+      std::ofstream x(filename);
       x << data.stringify();
       x.close();
     }
 
   protected:
+    std::string filename;
     json::JSON data;
 };

@@ -1,91 +1,79 @@
 #pragma once
 
+#include <ios>
 #include <json.hpp>
 #include <fstream>
-#include <vector>
 
-namespace Asar {
-  struct asar {
+class Asar {
+  public:
+    Asar(const std::string _filename) {
+      filename = _filename;
+
+      std::ifstream stream(filename);
+
+      char *size = new char[8];
+      stream.read(size, 8);
+
+      uint32_t uSize = *(uint32_t*)(size + 4) - 8;
+
+      char *buffer = new char[uSize + 1];
+      buffer[uSize] = '\0';
+
+      stream.seekg(16);
+      stream.read(buffer, uSize);
+
+      header = json::JSON::Load(buffer);
+      offset = uSize + 16;
+
+      delete[] size;
+      delete[] buffer;
+
+      stream.close();
+    }
+
+    std::string content(const std::string path) {
+      auto * c = resolve_asar_path(path);
+
+      uint64_t _size = std::stoull(c->at("size").stringify());
+      uint64_t _offset = std::stoull(c->at("offset").ToString());
+
+      std::stringstream content;
+      std::ifstream stream(filename, std::ios::binary);
+
+      // find a way to read specific size from rdbuf;
+      stream.seekg(offset + _offset);
+      content << stream.rdbuf();
+
+      stream.close();
+
+      return content.str().substr(0, _size);  
+    }
+
+    bool exist(const std::string path) {
+      auto * c = resolve_asar_path(path);
+      return !(c->IsNull());
+    }
+
+  protected:
+    std::string filename;
     json::JSON header;
     int offset;
+  
+    json::JSON * resolve_asar_path(std::string path) {
+      auto * address = &header.at("files"); 
+      int e = path.find('/');
+      
+      while (e != std::string::npos) {
+        std::string i = path.substr(0, e);
+        path.erase(path.begin(), path.begin() + e + 1);
+        e = path.find('/');
+
+        if (i.empty()) continue;
+        if (i.find_last_of(".") != std::string::npos) address = &address->at(i); // is_file
+        else { address = &address->at(i); address = &address->at("files"); } // is_directory
+      }
+
+      address = &address->at(path.substr(0));
+      return address;
+    }
   };
- 
-  void parser(struct asar * s);
-  std::string content(struct asar * s, std::vector<std::string> path);
-  bool exist(struct asar * s, std::vector<std::string> path);
-}
-
-namespace Asar { 
-  // https://github.com/electron/asar
-  // ---------------------------------
-  // Thanks Maks-s!
-  // https://github.com/Maks-s/asar-cpp
-  void parser(struct asar * s, std::string filename) {
-    std::ifstream stream(filename);
-
-    char *size = new char[8];
-    stream.read(size, 8);
-
-    uint32_t uSize = *(uint32_t*)(size + 4) - 8;
-
-    char *buffer = new char[uSize + 1];
-    buffer[uSize] = '\0';
-
-    stream.seekg(16);
-    stream.read(buffer, uSize);
-
-    s->header = json::JSON::Load(buffer);
-    s->offset = uSize + 16;
-
-    delete[] size;
-    delete[] buffer;
-    stream.close();
-  }
-
-  std::string content(struct asar * s, std::string filename, std::vector<std::string> path) {
-    auto * k = &s->header.at("files");
-
-    for (auto i = path.begin(); i != path.end(); i++) {
-      std::string t = *i;
-      size_t e = t.find_last_of(".");
-
-      if (e != std::string::npos && e < t.length()) k = &k->at(t); // is_file
-      else { k = &k->at(t); k = &k->at("files"); } // is_directory
-    };
-
-    uint64_t size = (uint64_t) k->at("size").ToInt();
-    uint64_t offset = std::stoull(k->at("offset").ToString());
-   
-    // Probably it's the worst way to resolve this problem
-    // Because it read the entire file starting from offset + asar->offset
-    // And after read it just cut string using the size.
-
-    // I think that if limit streamsize or stop stream after reach the limit_size
-    // is better but I don't know how to do this.
-
-    // Well at least it's working XD
-    std::stringstream content;
-    std::ifstream stream(filename);
-
-    stream.seekg(offset + s->offset);
-    content << stream.rdbuf();
-
-    stream.close();
-
-    return content.str().substr(0,size);  
-  }
-
-  bool exist(struct asar * s, std::vector<std::string> path) {
-    auto * k = &s->header.at("files");
-
-    for (auto i = path.begin(); i != path.end(); i++) {
-      std::string t = *i;
-      size_t e = t.find_last_of(".");
-
-      if (e != std::string::npos && e < t.length()) k = &k->at(t); // is_file
-      else { k = &k->at(t); k = &k->at("files"); } // is_directory
-    };
-
-    return !k->IsNull();
-  }
-}

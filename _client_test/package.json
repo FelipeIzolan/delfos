@@ -8,6 +8,6 @@
   "type": "module",
   "license": "ISC",
   "dependencies": {
-    "@electron/asar": "^3.2.7"
+    "@electron/asar": "3.2.7"
   }
 }

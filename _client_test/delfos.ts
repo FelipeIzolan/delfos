@@ -1,9 +1,7 @@
-declare global {
-  interface Window {
-    _query: ((t: string) => Promise<any>) | undefined
-  }
+interface Window {
+    _db_query: ((t: string) => Promise<any>)
+    delfos: DelfosWindow
 }
-
 
 type DelfosDatabase = {
   query(query: string): Promise<any>,
@@ -17,18 +15,16 @@ interface DelfosWindow {
 const delfos = <DelfosWindow> {};
 
 delfos.database = <DelfosDatabase>{};
-delfos.database.query = <(t:string) => Promise<any>> window._query;
+delfos.database.query = <(t:string) => Promise<any>> window._db_query;
 delfos.database.select = function (table: string, column?: string[] | string, where?: string) {
   let w = where ? ` WHERE ${where}` : "";
-  let s = Array.isArray(column) ? 
-          ("(" + column.reduce((acc, c) => acc += c + ",", "") + ")") :
-          column ? `(${column})` :
-          "*";
+  let s = Array.isArray(column) ? "(" + column.reduce((acc, c) => acc += c + ",", "") + ")" :
+          column ? `(${column})` : "*";
 
   return delfos.database.query(`SELECT ${s} FROM ${table}${w};`);
 }
 
-window._query = undefined;
+window.delfos = delfos;
+window._db_query = <any>undefined;
 
-
-export default delfos;
+console.log(delfos.database.query);
