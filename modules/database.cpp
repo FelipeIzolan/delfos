@@ -12,9 +12,9 @@ int _sqlite3_exec_callback(void * data, int argc, char **row, char **column) {
   return 0;
 }
 
-class SQLite {
+class Database {
   public:
-    SQLite(const std::string filename) {
+    Database(const std::string filename) {
       sqlite3_open(filename.c_str(), &db);
     }
 

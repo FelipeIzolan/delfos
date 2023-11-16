@@ -3,11 +3,11 @@
 #include <asar.hpp>
 #include <filesystem>
 
-#include "modules/sqlite.cpp"
+#include "modules/database.cpp"
 #include "modules/storage.cpp"
 #include "server.cpp"
 
-void load(webview::webview * window, Asar * resources, SQLite * db, Storage * storage) {
+void load(webview::webview * window, Asar * resources, Database * database, Storage * storage) {
   json::JSON config = json::JSON::Load(resources->content("/delfos.config.json")); 
  
   int width = config["window"]["width"].ToInt();
@@ -20,9 +20,9 @@ void load(webview::webview * window, Asar * resources, SQLite * db, Storage * st
   window->set_size(width, height, WEBVIEW_HINT_NONE);
   window->navigate("http://localhost:9999");
 
-  window->bind("_db_query", [db](const std::string param) {
+  window->bind("_db_query", [database](const std::string param) {
     std::string query = json::JSON::Load(param)[0].ToString();
-    return db->exec(query);
+    return database->exec(query);
   });
 
   window->bind("_storage_set", [storage](const std::string params) {
@@ -47,16 +47,16 @@ int main() {
   std::filesystem::create_directory("./data");
 
   Asar resources("resources.asar");
-  SQLite db("./data/.database.sql");
+  Database database("./data/.database.sql");
   Storage storage("./data/.storage.json");
 
   webview::webview window(true, nullptr);
-  load(&window, &resources, &db, &storage);
+  load(&window, &resources, &database, &storage);
   std::thread server = server::Init(&resources, 9999);
 
   window.run();
 
-  db.close();
+  database.close();
   storage.close();
 
   return 0;
