@@ -2,3 +2,5 @@
 .cache
 compile_commands.json
 build
+./libs/sqlite3
+./libs/webview2

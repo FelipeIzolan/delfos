@@ -2,7 +2,6 @@
 #include <string>
 #include <sqlite3.h>
 
-#include "../util.cpp"
 #include "http.hpp"
 #include "asar.hpp"
 
@@ -20,7 +19,7 @@ namespace server {
 
       if (req.method == "GET" && resources->exist(req.path)) {
           res->body = resources->content(req.path);
-          res->headers.insert({"Content-Type", util::extname(HTTP::mimeByExt(req.path))});
+          res->headers.insert({"Content-Type", HTTP::mime_by_extname(req.path)});
           return; 
       }
 

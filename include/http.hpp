@@ -1,6 +1,6 @@
 #pragma once
 
-#define RECV_BUFFER_SIZE 4096u
+#define RECV_BUFSIZE 4096u
 
 #include <cstdio>
 #include <cstdlib>
@@ -26,7 +26,9 @@
 
 
 namespace HTTP {
-    inline std::string mimeByExt(std::string ext) {
+    inline std::string mime_by_extname(std::string ext) {
+        ext = ext.substr(ext.find(".")+1);
+
         if (ext == "*3gpp") return "audio/3gpp";
         if (ext == "*jpm") return "video/jpm";
         if (ext == "*mp3") return "audio/mp3";
@@ -591,10 +593,10 @@ namespace HTTP {
               continue;
             }
 
-            char * cbuffer = new char[RECV_BUFFER_SIZE];
+            char * cbuffer = new char[RECV_BUFSIZE];
             std::string sbuffer;
 
-            if (recv(csocket, cbuffer, RECV_BUFFER_SIZE, 0) > 0) {
+            if (recv(csocket, cbuffer, RECV_BUFSIZE, 0) > 0) {
               Request req(cbuffer);
               Response res;
 
@@ -614,7 +616,7 @@ namespace HTTP {
             closesocket(csocket);
             #endif
 
-            memset(cbuffer, 0, RECV_BUFFER_SIZE);
+            memset(cbuffer, 0, RECV_BUFSIZE);
           }
 
           #ifdef linux

@@ -1,6 +1,7 @@
 #include <webview.h>
 #include <json.hpp>
 #include <asar.hpp>
+#include <filesystem>
 
 #include "modules/sqlite.cpp"
 #include "modules/storage.cpp"
@@ -43,6 +44,8 @@ void load(webview::webview * window, Asar * resources, SQLite * db, Storage * st
 }
 
 int main() {
+  std::filesystem::create_directory("./data");
+
   Asar resources("resources.asar");
   SQLite db("./data/.database.sql");
   Storage storage("./data/.storage.json");
