@@ -37,16 +37,18 @@ class Asar {
       uint64_t _size = std::stoull(c->at("size").stringify());
       uint64_t _offset = std::stoull(c->at("offset").ToString());
 
-      std::stringstream content;
+      char * buffer = new char[_size];
       std::ifstream stream(filename, std::ios::binary);
+      std::stringstream content;
 
-      // find a way to read specific size from rdbuf;
       stream.seekg(offset + _offset);
-      content << stream.rdbuf();
+      stream.read(buffer, _size);
+      content.write(buffer, _size);
 
       stream.close();
+      delete[] buffer;
 
-      return content.str().substr(0, _size);  
+      return content.str();
     }
 
     bool exist(const std::string path) {
