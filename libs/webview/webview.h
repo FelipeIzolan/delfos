@@ -2745,14 +2745,6 @@ public:
           js += R"js(;
 var promise = window._rpc[seq];
 delete window._rpc[seq];
-if (result !== undefined) {
-  try {
-    result = JSON.parse(result);
-  } catch {
-    promise.reject(new Error("Failed to parse binding result as JSON"));
-    return;
-  }
-}
 if (status === 0) {
   promise.resolve(result);
 } else {

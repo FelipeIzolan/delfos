@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include <json.hpp>
 
 class Storage {
@@ -7,31 +8,32 @@ class Storage {
       filename = _filename;
       
       std::ifstream x(filename);
-      std::stringstream y;
+      std::ostringstream y;
 
-      if (!x.fail()) { 
+      if (x.is_open()) {
         y << x.rdbuf();
-        data.Load(y.str());
+        data = json::JSON::Load(y.str());
+        std::cout << data["Rob"] << "\n";
       }
 
       x.close();
     }
 
-    std::string get(std::string key) {
+    std::string get(std::string key) { 
       return data[key].stringify();
     }
-
-    void set(std::string key, std::string value) {
+    
+    void set(std::string key, json::JSON value) { 
       data[key] = value;
     }
-
+    
     void del(std::string key) {
       data[key] = "undefined";
     }
 
     void close() {
       std::ofstream x(filename);
-      x << data.stringify();
+      x << data;
       x.close();
     }
 

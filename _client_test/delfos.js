@@ -16,3 +16,4 @@ window._db_query = undefined;
 window._storage_set = undefined;
 window._storage_get = undefined;
 window._storage_del = undefined;
+console.log(delfos.database.query);

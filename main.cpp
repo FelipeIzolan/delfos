@@ -21,13 +21,13 @@ void load(webview::webview * window, Asar * resources, Database * database, Stor
   window->navigate("http://localhost:9999");
 
   window->bind("_db_query", [database](const std::string param) {
-    std::string query = json::JSON::Load(param)[0].ToString();
+    std::string query = json::JSON::Load(param)[0].stringify();
     return database->exec(query);
   });
 
   window->bind("_storage_set", [storage](const std::string params) {
     json::JSON p = json::JSON::Load(params);
-    storage->set(p[0].ToString(), p[1].ToString());
+    storage->set(p[0].ToString(), p[1]);
     return "ok";
   });
 
@@ -49,7 +49,7 @@ int main() {
   Asar resources("resources.asar");
   Database database("./data/.database.sql");
   Storage storage("./data/.storage.json");
-
+  
   webview::webview window(true, nullptr);
   load(&window, &resources, &database, &storage);
   std::thread server = server::Init(&resources, 9999);
