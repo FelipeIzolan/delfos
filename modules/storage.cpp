@@ -1,3 +1,4 @@
+#include "webview.h"
 #include <fstream>
 #include <iostream>
 #include <json.hpp>
@@ -41,3 +42,22 @@ class Storage {
     std::string filename;
     json::JSON data;
 };
+
+void StorageWebviewLoader(webview::webview * webview, Storage * storage) {
+  webview->bind("_storage_set", [storage](const std::string params) {
+    json::JSON p = json::JSON::Load(params);
+    storage->set(p[0].ToString(), p[1]);
+    return "ok";
+  });
+
+  webview->bind("_storage_get", [storage](std::string param) {
+    std::string key = json::JSON::Load(param)[0].ToString();
+    return storage->get(key);
+  });
+
+  webview->bind("_storage_del", [storage](std::string param) {
+    std::string key = json::JSON::Load(param)[0].ToString();
+    storage->del(key);
+    return "ok";   
+  });
+}

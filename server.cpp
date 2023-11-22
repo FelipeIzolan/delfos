@@ -1,13 +1,12 @@
-#include <thread>
 #include <string>
+#include <thread>
 #include <sqlite3.h>
 
 #include "http.hpp"
 #include "asar.hpp"
 
-
 namespace server {
-  void Server(struct Asar * resources, int port) {
+  void Server(Asar * resources, int port) {
     HTTP::Server t;
 
     t.setup([&](HTTP::Request req, HTTP::Response * res) {     
@@ -29,9 +28,8 @@ namespace server {
     t.listen(port);
   }
 
-  std::thread Init(struct Asar * resources, int port) {
+  std::thread Init(Asar * resources, int port) {
     std::thread s(Server, resources, port);
     return s;
   }
-
 }

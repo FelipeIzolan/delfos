@@ -1,11 +1,11 @@
 #pragma once
 
-#include <string>
+#include "webview.h"
 #include <sqlite3.h>
 #include <json.hpp>
+#include <string>
 
 int _sqlite3_exec_callback(void * data, int argc, char **row, char **column) {
-  std::cout << "Hi! from callback\n";
   json::JSON c;
   for (int i = 0; i < argc; i++) c[column[i]] = row[i];
   ((json::JSON*)data)->append(c);
@@ -32,3 +32,10 @@ class Database {
     sqlite3 * db;
 
 };
+
+void DatabaseWebviewLoader(webview::webview * webview, Database * database) {
+  webview->bind("_db_query", [database](const std::string param) {
+    std::string query = json::JSON::Load(param)[0].ToString();
+    return database->exec(query);
+  });
+}

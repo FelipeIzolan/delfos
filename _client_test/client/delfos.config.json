@@ -7,6 +7,6 @@
     "devTools": true
   },
   "server": {
-    "port": 9999
+    "port": 32777
   }
 }
