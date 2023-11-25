@@ -42,6 +42,15 @@ class Window {
       #endif
     }
 
+    void setTitle(std::string title) {
+      #ifdef _WIN32
+      SetWindowText((HWND) window, title.c_str());
+      #endif
+
+      #ifdef _linux_
+      #endif
+    }
+
     void setPosition(int x, int y) {
       #ifdef _WIN32
       SetWindowPos((HWND) window, HWND_TOP, x, y, 0, 0, SWP_NOSIZE);
@@ -77,6 +86,12 @@ class Window {
 };
 
 void WindowWebviewLoader(webview::webview * webview, Window * window) {
+  webview->bind("_window_set_title", [window](const std::string param) {
+    std::string p = json::JSON::Load(param)[0].ToString();
+    window->setTitle(p);
+    return "ok";
+  });
+
   webview->bind("_window_set_position", [window](const std::string params) {
     json::JSON p = json::JSON::Load(params);
     window->setPosition(p[0].ToInt(), p[1].ToInt());
@@ -89,22 +104,22 @@ void WindowWebviewLoader(webview::webview * webview, Window * window) {
     return "ok";
   });
 
-  webview->bind("_window_maximize", [window](const std::string params) {
+  webview->bind("_window_maximize", [window](const std::string null) {
     window->maximize();
     return "ok";
   });
   
-  webview->bind("_window_restore", [window](const std::string params) {
+  webview->bind("_window_restore", [window](const std::string null) {
     window->restore();
     return "ok";
   });
   
-  webview->bind("_window_minimize", [window](const std::string params) {
+  webview->bind("_window_minimize", [window](const std::string null) {
     window->minimize();
     return "ok";
   });
 
-  webview->bind("_window_close", [webview](const std::string params) {
+  webview->bind("_window_close", [webview](const std::string null) {
     webview->terminate();
     return "ok";
   });

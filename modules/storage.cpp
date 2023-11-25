@@ -14,21 +14,20 @@ class Storage {
       if (x.is_open()) {
         y << x.rdbuf();
         data = json::JSON::Load(y.str());
-        std::cout << data["Rob"] << "\n";
       }
 
       x.close();
     }
 
-    std::string get(std::string key) { 
+    std::string get(const std::string key) { 
       return data[key].stringify();
     }
     
-    void set(std::string key, json::JSON value) { 
+    void set(const std::string key, json::JSON value) { 
       data[key] = value;
     }
     
-    void del(std::string key) {
+    void del(const std::string key) {
       data[key] = "undefined";
     }
 

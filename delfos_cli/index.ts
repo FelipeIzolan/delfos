@@ -1,17 +1,20 @@
 #! /usr/bin/env node
 
+import os from "os";
+import path from "path";
 import process from "process";
 
-const arg = process.argv.slice(2);
-const command = arg.find(x => !x.startsWith("-") && !x.startsWith("--"));
+import create from "./command/create";
+import build from "./command/build";
 
-console.log(command);
+const arg = process.argv.slice(2);
+const value = arg[1];
+const command = arg[0];
+
+const platform = os.platform();
+const root = path.resolve(process.argv[1], "../");
 
 switch (command) {
-  case "create":
-    break;
-  case "build":
-    break;
-  case "debug":
-    break;
+  case "create": create(value); break;
+  case "build": build(platform, root); break;
 }

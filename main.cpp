@@ -1,7 +1,6 @@
 #include <webview.h>
 #include <json.hpp>
 #include <asar.hpp>
-#include <filesystem>
 
 #include "modules/database.cpp"
 #include "modules/storage.cpp"
@@ -27,7 +26,6 @@ int load(webview::webview * webview, Asar * resources, Window * window) {
 }
 
 int main() {
-  std::filesystem::create_directory("./data");
   Asar resources("resources.asar");
   
   webview::webview webview(true, nullptr);

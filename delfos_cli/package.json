@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
+  "files": [
+    "./dist",
+    "./package.json"
+  ],
   "bin": {
-    "delfos-cli": "dist/index.js"
+    "delfos-cli": "./dist/index.js"
   },
   "scripts": {
     "start": "tsx index.ts",
@@ -18,7 +22,9 @@
   "author": "Felipe Izolan",
   "license": "MIT",
   "dependencies": {
-    "@electron/asar": "^3.2.8"
+    "@electron/asar": "^3.2.8",
+    "@erhhung/node-resource-hacker": "^1.0.1",
+    "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
     "@types/node": "^20.9.4",
