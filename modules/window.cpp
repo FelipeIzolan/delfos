@@ -42,30 +42,12 @@ class Window {
       #endif
     }
 
-    void setTitle(std::string title) {
-      #ifdef _WIN32
-      SetWindowText((HWND) window, title.c_str());
-      #endif
-
-      #ifdef _linux_
-      #endif
-    }
-
     void setPosition(int x, int y) {
       #ifdef _WIN32
       SetWindowPos((HWND) window, HWND_TOP, x, y, 0, 0, SWP_NOSIZE);
       #endif
     
       #ifdef _linux_
-      #endif
-    }
-    
-    void setSize(int width, int height) {
-      #ifdef _WIN32  
-      SetWindowPos((HWND) window, HWND_TOP, 0, 0, width, height, SWP_NOMOVE);
-      #endif
-      
-      #ifdef _linux
       #endif
     }
 
@@ -86,9 +68,9 @@ class Window {
 };
 
 void WindowWebviewLoader(webview::webview * webview, Window * window) {
-  webview->bind("_window_set_title", [window](const std::string param) {
+  webview->bind("_window_set_title", [webview](const std::string param) {
     std::string p = json::JSON::Load(param)[0].ToString();
-    window->setTitle(p);
+    webview->set_title(p);
     return "ok";
   });
 
@@ -98,9 +80,9 @@ void WindowWebviewLoader(webview::webview * webview, Window * window) {
     return "ok";
   });
 
-  webview->bind("_window_set_size", [window](const std::string params) {
+  webview->bind("_window_set_size", [webview](const std::string params) {
     json::JSON p = json::JSON::Load(params);
-    window->setSize(p[0].ToInt(), p[1].ToInt());
+    webview->set_size(p[0].ToInt(), p[1].ToInt(), WEBVIEW_HINT_NONE);
     return "ok";
   });
 

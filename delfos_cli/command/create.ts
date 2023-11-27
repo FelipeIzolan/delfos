@@ -2,14 +2,12 @@ import fs from "fs";
 
 const DELFOS_CONFIG_TEMPLATE = `{
   "resources": "./dist",
+  "dev_tools": false,
   "window": {
     "title": "__value__",
-    "width": 800,
-    "height": 600,
+    "width": 1280,
+    "height": 720,
     "icon": ""
-  },
-  "server": {
-    "port": ${Math.round(Math.random() * 65535)}
   }
 }
 `;

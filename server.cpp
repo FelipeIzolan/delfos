@@ -1,15 +1,16 @@
 #include <string>
 #include <thread>
 #include <sqlite3.h>
+#include <webview.h>
+#include <winsock2.h>
 
 #include "http.hpp"
 #include "asar.hpp"
 
 namespace server {
   void Server(Asar * resources, int port) {
-    HTTP::Server t;
-
-    t.setup([&](HTTP::Request req, HTTP::Response * res) {     
+    HTTP::Server t(
+    [&](HTTP::Request req, HTTP::Response * res) {     
       if (req.method == "GET" && req.path == "/") { 
         res->body = resources->content("/index.html");
         res->headers.insert({"Content-Type", "text/html"});
@@ -23,9 +24,11 @@ namespace server {
       }
 
       res->code = 404;    
-    });
-
-    t.listen(port);
+    },
+    port
+    );
+ 
+    t.listen();
   }
 
   std::thread Init(Asar * resources, int port) {

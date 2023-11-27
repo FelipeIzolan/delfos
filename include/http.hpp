@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
-#include <iostream>
 #include <map>
 #include <sstream>
 #include <stdio.h>
@@ -512,21 +511,21 @@ namespace HTTP {
 
     class Server {
     public:
-        void setup(std::function<void(Request, Response*)> func) { handler = func; }
+        #ifdef _WIN32
+        SOCKET ssocket;
+	      WSADATA wsa_data;
+        #endif
+        #ifdef linux
+        int ssocket;
+        #endif
+        
+        struct sockaddr_in saddress;
+        int ssize;
 
-        void listen(uint16_t port) {
-          #ifdef _WIN32
-          SOCKET ssocket;
-	        WSADATA wsa_data;
-          #endif
-          #ifdef linux
-          int ssocket;
-          #endif
- 
-          struct sockaddr_in saddress;
+        Server(std::function<void(Request, Response*)> func, int port) {    
           char * soption = new char[BUFSIZ];
-	        int ssize = sizeof(saddress);
 
+	        ssize = sizeof(saddress);
           saddress.sin_port = htons(port); // network-byte-order - big-endian
           saddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // only local-client
           saddress.sin_family = AF_INET;
@@ -563,6 +562,10 @@ namespace HTTP {
             exit(1);
           }
 
+          handler = func;
+        }
+
+        void listen() { 
           if (::listen(ssocket, SOMAXCONN) < 0) {
             perror("http.h -> listen failed.");
 		        #ifdef _WIN32

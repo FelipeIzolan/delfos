@@ -9,27 +9,12 @@
 
 #include "server.cpp"
 
-int load(webview::webview * webview, Asar * resources, Window * window) {
-  json::JSON config = json::JSON::Load(resources->content("/delfos.config.json")); 
- 
-  int width = config["window"]["width"].ToInt();
-  int height = config["window"]["height"].ToInt();
-  int port = config["server"]["port"].ToInt();
-  std::string title = config["window"]["title"].ToString();
-
-  webview->set_title(title);
-  webview->set_size(width, height, WEBVIEW_HINT_NONE);
-  webview->navigate("http://localhost:" + std::to_string(port));
-  window->setIcon("icon.ico");
-
-  return port;
-}
-
-int main() {
+int main() {  
   Asar resources("resources.asar");
-  
-  webview::webview webview(true, nullptr);
+  json::JSON config = json::JSON::Load(resources.content("/delfos.config.json"));  
 
+  webview::webview webview(config["dev_tools"].ToBool(), nullptr);
+  
   Database database("./data/.database.sql");
   Storage storage("./data/.storage.json");
   Window window(webview.window()); 
@@ -39,9 +24,20 @@ int main() {
   StorageWebviewLoader(&webview, &storage);
   WindowWebviewLoader(&webview, &window);
   SystemWebviewLoader(&webview, &system);
+  
+  webview.set_title(config["window"]["title"].ToString());
+  webview.set_size(config["window"]["width"].ToInt(), config["window"]["height"].ToInt(), WEBVIEW_HINT_NONE);
 
-  int port = load(&webview, &resources, &window);
-  std::thread server = server::Init(&resources, port);
+  if (!config["window"]["min_width"].IsNull() && !config["window"]["min_height"].IsNull())
+    webview.set_size(config["window"]["min_width"].ToInt(), config["window"]["min_height"].ToInt(), WEBVIEW_HINT_MIN);
+
+  if (!config["window"]["max_width"].IsNull() && !config["window"]["max_height"].IsNull())
+    webview.set_size(config["window"]["max_width"].ToInt(), config["window"]["max_height"].ToInt(), WEBVIEW_HINT_MAX);
+
+  webview.navigate("http://localhost:" + std::to_string(9999));
+  window.setIcon("icon.ico"); 
+
+  std::thread server = server::Init(&resources, 9999);
 
   webview.run();
 
