@@ -1,13 +1,13 @@
+#include <atomic>
 #include <string>
 #include <thread>
-#include <sqlite3.h>
-#include <webview.h>
-#include <winsock2.h>
 
 #include "http.hpp"
 #include "asar.hpp"
 
 namespace server {
+  std::atomic<bool> quit(false);
+
   void Server(Asar * resources, int port) {
     HTTP::Server t(
     [&](HTTP::Request req, HTTP::Response * res) {     
@@ -28,7 +28,7 @@ namespace server {
     port
     );
  
-    t.listen();
+    t.listen(&quit);
   }
 
   std::thread Init(Asar * resources, int port) {

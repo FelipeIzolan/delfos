@@ -1,28 +1,30 @@
 #pragma once
 
+#include <iostream>
 #define RECV_BUFSIZE 4096u
 
 #include <cstdio>
 #include <cstdlib>
-#include <cstdint>
 #include <cstring>
 #include <functional>
 #include <map>
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <atomic>
 
 #ifdef linux
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <fcntl.h> // se pa vai poder ser removido
+#include <poll.h>
 #endif
 
 #ifdef _WIN32
 #include <winsock2.h>
 #endif
-
 
 namespace HTTP {
     inline std::string mime_by_extname(std::string ext) {
@@ -554,6 +556,23 @@ namespace HTTP {
           	exit(1);
            }
 
+//           #ifdef _WIN32
+//           // need to be tested!
+//           u_long mode = 1;
+//           if (ioctlsocket(ssocket, FIONBIO, &mode) < 0) {
+//             perror("http.h -> ioctlsocket non-block failed.");
+//             WSACleanup();
+//             exit(1);
+//           }
+//           #endif
+// 
+//           #ifdef linux
+//           if (fcntl(ssocket, F_SETFL, O_NONBLOCK) < 0) {
+//             perror("http.h -> fcntl non-block failed.");
+//             exit(1);
+//           }
+//           #endif
+
           if (bind(ssocket, (struct sockaddr*)&saddress, ssize) < 0) {
             perror("http.h -> bind failed.");
 		        #ifdef _WIN32
@@ -565,7 +584,7 @@ namespace HTTP {
           handler = func;
         }
 
-        void listen() { 
+        void listen(std::atomic<bool> * quit) { 
           if (::listen(ssocket, SOMAXCONN) < 0) {
             perror("http.h -> listen failed.");
 		        #ifdef _WIN32
@@ -574,52 +593,64 @@ namespace HTTP {
             exit(1);
           }
 
-          while (1) {
-            #ifdef _WIN32
-            SOCKET csocket;
-            #endif
-            #ifdef linux
-            int csocket;
-            #endif
+          // write poll using winsock2.h
+          #ifdef linux
+          struct pollfd ssocketfds[1];
+          ssocketfds[0].fd = ssocket;
+          ssocketfds[0].events = POLLIN;
+          #endif
+
+          while (!quit->load()) {
+            // poll -> every 1 sec, if quit == true, break;
+            int event = poll(ssocketfds, 1, 1000); // 1 sec
+
+            if (event == -1) { perror("http.h -> poll failed."); break; }
+            if (event == 0) { continue; }
+            if (ssocketfds[0].revents & POLLIN) {
+              #ifdef _WIN32
+              SOCKET csocket;
+              #endif
+              #ifdef linux
+              int csocket;
+              #endif
   		
-            struct sockaddr_in caddress;
+              struct sockaddr_in caddress;
              
-            #ifdef _WIN32
-            int csize = sizeof(caddress);
-            #endif
-            #ifdef linux
-            socklen_t csize = sizeof(caddress);
-            #endif
+              #ifdef _WIN32
+              int csize = sizeof(caddress);
+              #endif
+              #ifdef linux
+              socklen_t csize = sizeof(caddress);
+              #endif
 
-            if ((csocket = accept(ssocket, (struct sockaddr*)&caddress, &csize)) < 0) {
-              perror("http.h -> accept failed.");
-              continue;
-            }
+              if ((csocket = accept(ssocket, (struct sockaddr*)&caddress, &csize)) < 0)
+                continue;
 
-            char * cbuffer = new char[RECV_BUFSIZE];
-            std::string sbuffer;
+              char * cbuffer = new char[RECV_BUFSIZE];
+              std::string sbuffer;
 
-            if (recv(csocket, cbuffer, RECV_BUFSIZE, 0) > 0) {
-              Request req(cbuffer);
-              Response res;
+              if (recv(csocket, cbuffer, RECV_BUFSIZE, 0) > 0) {
+                Request req(cbuffer);
+                Response res;
 
-              handler(req, &res);
-              sbuffer = AssemblyResponse(&res);
+                handler(req, &res);
+                sbuffer = AssemblyResponse(&res);
 
-              if (send(csocket, sbuffer.c_str(), sbuffer.size(), 0) < 0) 
-                perror("http.h -> send failed.");
-            }
+                if (send(csocket, sbuffer.c_str(), sbuffer.size(), 0) < 0) 
+                  perror("http.h -> send failed.");
+              }
                 
-            #ifdef linux
-            shutdown(csocket, SHUT_RDWR);
-            close(csocket);
-            #endif
-            #ifdef _WIN32
-		        shutdown(csocket, SD_SEND);
-            closesocket(csocket);
-            #endif
+              #ifdef linux
+              shutdown(csocket, SHUT_RDWR);
+              close(csocket);
+              #endif
+              #ifdef _WIN32
+		          shutdown(csocket, SD_SEND);
+              closesocket(csocket);
+              #endif
 
-            memset(cbuffer, 0, RECV_BUFSIZE);
+              memset(cbuffer, 0, RECV_BUFSIZE);
+            }
           }
 
           #ifdef linux

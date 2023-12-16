@@ -9,7 +9,7 @@
 
 #include "server.cpp"
 
-int main() {  
+int main() {   
   Asar resources("resources.asar");
   json::JSON config = json::JSON::Load(resources.content("/delfos.config.json"));  
 
@@ -43,6 +43,9 @@ int main() {
 
   database.close();
   storage.close();
+
+  server::quit.store(true);
+  server.join();
 
   return 0;
 }
