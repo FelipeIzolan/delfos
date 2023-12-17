@@ -42,7 +42,7 @@ class Window {
       #endif
     }
 
-    void setPosition(int x, int y) {
+    void set_position(int x, int y) {
       #ifdef _WIN32
       SetWindowPos((HWND) window, HWND_TOP, x, y, 0, 0, SWP_NOSIZE);
       #endif
@@ -51,7 +51,7 @@ class Window {
       #endif
     }
 
-    void setIcon(const std::string source) {
+    void set_icon(const std::string source) {
       #ifdef _WIN32
         HANDLE hIcon = LoadImage(GetModuleHandle(0), source.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
         SendMessage((HWND) window, WM_SETICON, ICON_SMALL, (LPARAM) hIcon);
@@ -76,7 +76,7 @@ void WindowWebviewLoader(webview::webview * webview, Window * window) {
 
   webview->bind("_window_set_position", [window](const std::string params) {
     json::JSON p = json::JSON::Load(params);
-    window->setPosition(p[0].ToInt(), p[1].ToInt());
+    window->set_position(p[0].ToInt(), p[1].ToInt());
     return "ok";
   });
 

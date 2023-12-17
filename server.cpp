@@ -1,14 +1,15 @@
-#include <atomic>
 #include <string>
 #include <thread>
 
 #include "http.hpp"
 #include "asar.hpp"
+#include "webview.h"
 
 namespace server {
-  std::atomic<bool> quit(false);
+  bool quit = false;
+  int port = 0;
 
-  void Server(Asar * resources, int port) {
+  void Server(Asar * resources, webview::webview * webview) {
     HTTP::Server t(
     [&](HTTP::Request req, HTTP::Response * res) {     
       if (req.method == "GET" && req.path == "/") { 
@@ -25,14 +26,11 @@ namespace server {
 
       res->code = 404;    
     },
-    port
+    port,
+    &port
     );
  
+    webview->navigate("http://localhost:" + std::to_string(port));
     t.listen(&quit);
-  }
-
-  std::thread Init(Asar * resources, int port) {
-    std::thread s(Server, resources, port);
-    return s;
   }
 }

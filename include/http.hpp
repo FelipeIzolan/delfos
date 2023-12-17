@@ -18,7 +18,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <netinet/in.h>
-#include <fcntl.h> // se pa vai poder ser removido
 #include <poll.h>
 #endif
 
@@ -522,15 +521,20 @@ namespace HTTP {
         #endif
         
         struct sockaddr_in saddress;
+        #ifdef _WIN32
         int ssize;
+        #endif
+        #ifdef linux
+        socklen_t ssize;
+        #endif
 
-        Server(std::function<void(Request, Response*)> func, int port) {    
+        Server(std::function<void(Request, Response*)> callback, int port, int * _port) {    
           char * soption = new char[BUFSIZ];
 
-	        ssize = sizeof(saddress);
-          saddress.sin_port = htons(port); // network-byte-order - big-endian
+          saddress.sin_port = port != 0 ? htons(port) : 0; // network-byte-order - big-endian
           saddress.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // only local-client
           saddress.sin_family = AF_INET;
+	        ssize = sizeof(saddress);
 
 	        #ifdef _WIN32
 	        if (WSAStartup(MAKEWORD(1,1), &wsa_data) != 0) {
@@ -556,23 +560,6 @@ namespace HTTP {
           	exit(1);
            }
 
-//           #ifdef _WIN32
-//           // need to be tested!
-//           u_long mode = 1;
-//           if (ioctlsocket(ssocket, FIONBIO, &mode) < 0) {
-//             perror("http.h -> ioctlsocket non-block failed.");
-//             WSACleanup();
-//             exit(1);
-//           }
-//           #endif
-// 
-//           #ifdef linux
-//           if (fcntl(ssocket, F_SETFL, O_NONBLOCK) < 0) {
-//             perror("http.h -> fcntl non-block failed.");
-//             exit(1);
-//           }
-//           #endif
-
           if (bind(ssocket, (struct sockaddr*)&saddress, ssize) < 0) {
             perror("http.h -> bind failed.");
 		        #ifdef _WIN32
@@ -580,11 +567,7 @@ namespace HTTP {
 		        #endif
             exit(1);
           }
-
-          handler = func;
-        }
-
-        void listen(std::atomic<bool> * quit) { 
+          
           if (::listen(ssocket, SOMAXCONN) < 0) {
             perror("http.h -> listen failed.");
 		        #ifdef _WIN32
@@ -592,7 +575,21 @@ namespace HTTP {
 		        #endif
             exit(1);
           }
+          
+          if (_port != nullptr) {
+            if (getsockname(ssocket, (struct sockaddr*)&saddress, &ssize) == -1) {
+              perror("http.h -> getsockname failed.");
+		          #ifdef _WIN32
+		          WSACleanup();
+		          #endif
+              exit(1);
+            } else *_port = ntohs(saddress.sin_port);;
+          }
 
+          handler = callback;
+        }
+
+        void listen(bool * quit) { 
           // write poll using winsock2.h
           #ifdef linux
           struct pollfd ssocketfds[1];
@@ -600,7 +597,7 @@ namespace HTTP {
           ssocketfds[0].events = POLLIN;
           #endif
 
-          while (!quit->load()) {
+          while (!*quit) {
             // poll -> every 1 sec, if quit == true, break;
             int event = poll(ssocketfds, 1, 1000); // 1 sec
 
