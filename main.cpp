@@ -42,8 +42,8 @@ int main() {
   
   std::thread thread(server::Server, &resources, &webview);
   
-	init_config(*config, &webview, &window);
-	delete config;
+  init_config(*config, &webview, &window);
+  delete config;
 
 	webview.run();
 
