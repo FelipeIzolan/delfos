@@ -1,6 +1,3 @@
-#include <string>
-#include <thread>
-
 #include "http.hpp"
 #include "asar.hpp"
 #include "webview.h"

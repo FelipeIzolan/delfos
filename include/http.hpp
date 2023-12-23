@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #define RECV_BUFSIZE 4096u
 
 #include <cstdio>
@@ -11,7 +10,6 @@
 #include <sstream>
 #include <stdio.h>
 #include <string>
-#include <atomic>
 
 #ifdef linux
 #include <sys/socket.h>
@@ -599,7 +597,7 @@ namespace HTTP {
 
           while (!*quit) {
             // poll -> every 1 sec, if quit == true, break;
-            int event = poll(ssocketfds, 1, 1000); // 1 sec
+            int event = poll(ssocketfds, 1, 1000);
 
             if (event == -1) { perror("http.h -> poll failed."); break; }
             if (event == 0) { continue; }

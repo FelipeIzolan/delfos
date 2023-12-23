@@ -1,3 +1,4 @@
+# change to cmake later
 New-Item -ItemType Directory -Force -Path ../libs/sqlite3
 New-Item -ItemType Directory -Force -Path ../libs/webview2
 

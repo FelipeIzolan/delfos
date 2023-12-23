@@ -67,7 +67,7 @@ class Window {
     void * window;
 };
 
-void WindowWebviewLoader(webview::webview * webview, Window * window) {
+void window_webview_loader(webview::webview * webview, Window * window) {
   webview->bind("_window_set_title", [webview](const std::string param) {
     std::string p = json::JSON::Load(param)[0].ToString();
     webview->set_title(p);

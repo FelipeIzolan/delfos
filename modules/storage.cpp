@@ -19,6 +19,12 @@ class Storage {
       x.close();
     }
 
+		~Storage() {
+      std::ofstream x(filename);
+      x << data;
+      x.close();
+    }
+
     std::string get(const std::string key) { 
       return data[key].stringify();
     }
@@ -31,18 +37,12 @@ class Storage {
       data[key] = "undefined";
     }
 
-    void close() {
-      std::ofstream x(filename);
-      x << data;
-      x.close();
-    }
-
   protected:
     std::string filename;
     json::JSON data;
 };
 
-void StorageWebviewLoader(webview::webview * webview, Storage * storage) {
+void storage_webview_loader(webview::webview * webview, Storage * storage) {
   webview->bind("_storage_set", [storage](const std::string params) {
     json::JSON p = json::JSON::Load(params);
     storage->set(p[0].ToString(), p[1]);
